@@ -1,8 +1,12 @@
 #!/usr/bin/perl
+
+use 5.024;
 use strict;
 use warnings;
-use 5.024;
 no warnings 'experimental';
+
+# core modules
+use Cwd qw(getcwd);
 
 #+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+#
 my $CurrPack = 'directory';
@@ -11,7 +15,7 @@ my $Group = 'www-data';
 #+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+#
 
 $CurrPack  =~ s/\/$//;
-my $WD      = `pwd`;
+my $WD      = getcwd();
 chomp( $WD );
 my $Owner   = $User || `whoami`;
 chomp( $Owner );
@@ -69,7 +73,8 @@ sub Usage {
           "\th\t- Show this usage explanation\n".
           "\n".
           "Precondition:\n".
-          "  We and also the package directory are directly located in \$OTOBOHome.\n".
+          "  We are directly located in \$OTOBOHome.\n".
+          "  The package directory is in a different location.\n".
           "\n".
           "Examples for a new package (newpack):\n".
           "  - start by setting the correct directory (only needs to be executed once):\n".
@@ -94,9 +99,9 @@ sub Usage {
 sub InitF {
 
     my $Pack = $_[0] || $CurrPack;
-    if ( !$Pack ) {
-        die "Package directory needed.\n";
-    }
+
+    die "Package directory needed.\n" unless $Pack;
+
     if ( !-e $Pack ) {
         Usage() if !@_;
         die "'$Pack' does not exist or is not a directory.\n";
@@ -125,7 +130,7 @@ sub InitF {
         }
 
         print "Linking '$File'.\n";
-        
+
         my $Dir = $File;
         if ( $Dir =~ s/\/[^\/]+$// ) {
             system "mkdir -p $Dir";
@@ -370,9 +375,9 @@ sub UpdateF {
 sub CleanF {
 
     my $Pack = $_[0] || $CurrPack;
-    if ( !$Pack ) {
-        die "Package directory needed.\n";
-    }
+
+    die "Package directory needed.\n" unless $Pack;
+
     if ( !-e $Pack ) {
         die "'$Pack' does not exist.\n";
     }
@@ -382,7 +387,7 @@ sub CleanF {
     for my $File ( @FileList ) {
         chomp($File);
         $File =~ s/^\.?\/?$Pack\/+//;
-        
+
         if ( -l $File ) {
             print "Deleting link '$File' and restoring pp_backup if it is present.\n";
             system "rm $File";
@@ -479,28 +484,39 @@ sub GetProgram {
 
 #+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+#
 
+# The script itself is modified here.
 sub SetPack {
-    if ( !$_[0] || !-d $_[0] ) {
-        $_[0] .= '';
-        die "Please provide the directory of the package. '$_[0]' is invalid.\n";
+    my ($Pack) = @_;
+
+    if ( !$Pack || !-d $Pack ) {
+        $Pack //= '';
+        die "Please provide the directory of the package. '$Pack' is invalid.\n";
     }
 
     if ( -e "$0.tmp_setpack" ) {
         die "$0.tmp_setpack exists. Cannot execute.\n";
     }
 
-    open my $orig, "< $0" or die "Cannot open $0 to read.\n";
-    open my $new, "> $0.tmp_setpack" or die "Cannot open $0.tmp_setpack to write.\n";
+    open my $orig, '<', $0 or die "Cannot open $0 to read.\n";
+    open my $new, '>', "$0.tmp_setpack" or die "Cannot open $0.tmp_setpack to write.\n";
 
     WHILE:
     while ( <$orig> ) {
-        if ( /^\s*my\s+\$CurrPack/ ) {
-            print $new "my \$CurrPack = '$_[0]';\n";
+        # only replace first occurence
+        if ( m/^\s*my\s+\$CurrPack/ ) {
+            print $new "my \$CurrPack = '$Pack';\n";
+
             last WHILE;
         }
         print $new $_;
     }
-    while ( <$orig> ) { print $new $_ }
+
+    # copy the rest of the file
+    while ( <$orig> ) {
+        print $new $_;
+     }
 
     system "mv $0.tmp_setpack $0; chmod +x $0;";
+
+    return;
 }
