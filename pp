@@ -184,10 +184,12 @@ sub PrepF {
         if ( -e "$Pack/$File" ) {
             if ( -e $File ) {
                 warn "Both, '$Pack/$File' as well as '$File' are present. Nothing to do...\n";
+
                 next FILE;
             }
             if ( !-f "$Pack/$File" ) {
                 warn "'$Pack/$File' exists, but is not a regular file. Action not defined...\n";
+
                 next FILE;
             }
 
@@ -197,22 +199,27 @@ sub PrepF {
                 system "mkdir -p $Dir";
             }
             system "ln -s $Pack/$File $File";
+
             next FILE;
         }
 
         if ( -e $File ) {
             if ( -l $File ) {
                 warn "'$File' is already a link - check please. Skipping...\n";
+
                 next FILE;
             }
+
             if ( $File =~ /^Custom\// ) {
                 warn "'$File' already exists - check please. Skipping...\n";
+
                 next FILE;
             }
 
             if ( $File =~ /^Kernel\// ) {
                 if ( -e "Custom/$File" ) {
                     warn "'Custom/$File' already exists - check please. Skipping...\n";
+
                     next FILE;
                 }
 
@@ -245,14 +252,17 @@ sub PrepF {
                     print "\n";
                 }
                 system "ln -s $Pack/Custom/$File Custom/$File";
+
                 next FILE;
             }
 
             if ( -e "$File.pp_backup" ) {
                 warn "$File.pp_backup already present. Skipping...\n";
+
                 next FILE;
             }
 
+            # $File is not in Kernel, maybe var or Custom
             print "Creating Backup of '$File', linking '$File' to '$Pack/$File' and copying latter from original.\n";
             my $Dir = $File;
             if ( $Dir =~ s/\/[^\/]+$// ) {
