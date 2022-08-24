@@ -121,8 +121,10 @@ sub InitF {
 
     FILE:
     for my $File ( @FileList ) {
-        chomp($File);
+        chomp $File;
         $File =~ s/^\.?\/?$Pack\/+//;
+
+        next FILE if $File eq '.gitignore';
 
         if ( -e $File ) {
             if ( -e "$File.pp_backup" ) {
