@@ -597,10 +597,14 @@ sub UpdateF {
     if ( !$Pack ) {
         die "Package directory needed.\n";
     }
-    if ( !-e $Pack ) {
-        die "'$Pack' does not exist.\n";
-    }
 
+    # remove trailing slash, necessary as $Pack is used in matching
+    $Pack =~ s!/+$!!;
+
+    die "'$Pack' does not exist"     unless -e $Pack;
+    die "'$Pack' is not a directory" unless -d $Pack;
+
+    # using -path because there should be no error when the dir does not exists
     my @FileList =
         map { `find $Pack -path "$Pack/$_/*" -type f -print` }
         qw(Kernel Custom scripts/test var/httpd/htdocs);
