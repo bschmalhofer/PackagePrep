@@ -612,7 +612,7 @@ sub UpdateF {
         $OrigFile =~ s/^\.?\/?$Pack(:?\/Custom)?\/?//;
 
         if ( !-e $OrigFile ) {
-            if ( $File =~ m/Custom/ ) {
+            if ( $File =~ m!^Custom/! ) {
                 warn "'$File' seems to be in Custom directory, but could not find original file '$OrigFile'."
             }
 
