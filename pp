@@ -601,7 +601,9 @@ sub UpdateF {
         die "'$Pack' does not exist.\n";
     }
 
-    my @FileList = `find $Pack/Custom $Pack/var/httpd/htdocs -type f -print`;
+    my @FileList =
+        map { `find $Pack -path "$Pack/$_/*" -type f -print` }
+        qw(Kernel Custom scripts/test var/httpd/htdocs);
 
     FILE:
     for my $File ( @FileList ) {
@@ -610,7 +612,7 @@ sub UpdateF {
         $OrigFile =~ s/^\.?\/?$Pack(:?\/Custom)?\/?//;
 
         if ( !-e $OrigFile ) {
-            if ( $File =~ /Custom/ ) {
+            if ( $File =~ m/Custom/ ) {
                 warn "'$File' seems to be in Custom directory, but could not find original file '$OrigFile'."
             }
 
